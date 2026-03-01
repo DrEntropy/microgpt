@@ -95,6 +95,39 @@ function renderEmbedding(containerId, values) {
     });
 }
 
+// --- Combining card ---
+
+function renderMlpGrid(values) {
+    const container = $("#combine-mlp");
+    container.innerHTML = "";
+    const maxVal = Math.max(...values, 0.001);
+    values.forEach((v) => {
+        const cell = document.createElement("div");
+        cell.className = "mlp-cell";
+        // Green intensity: 0 = gray (dead neuron), max = bright teal
+        const t = maxVal > 0 ? v / maxVal : 0;
+        if (v === 0) {
+            cell.style.backgroundColor = "#e2e8f0";
+        } else {
+            const r = Math.round(20 + (1 - t) * 200);
+            const g = Math.round(184 - (1 - t) * 80);
+            const b = Math.round(166 - (1 - t) * 60);
+            cell.style.backgroundColor = `rgb(${r},${g},${b})`;
+        }
+        const tip = document.createElement("span");
+        tip.className = "tooltip";
+        tip.textContent = v === 0 ? "0 (dead)" : v.toFixed(4);
+        cell.appendChild(tip);
+        container.appendChild(cell);
+    });
+}
+
+function renderCombining(inter) {
+    renderEmbedding("#combine-post-attn", inter.layer0_post_attn);
+    renderMlpGrid(inter.layer0_mlp_relu);
+    renderEmbedding("#combine-final", inter.layer0_final_emb);
+}
+
 // --- Attention heatmaps ---
 
 function initAttnHeads() {
@@ -217,6 +250,9 @@ function showStep(idx) {
 
     // Attention (show cumulative up to this step)
     renderAttention(allSteps, idx);
+
+    // Combining
+    renderCombining(inter);
 
     // Prediction
     const temp = getTemp();

@@ -82,6 +82,7 @@ def generate_step(token_id, pos_id, keys, values, weights, meta):
 
         x = linear(x_attn, weights[f"layer{li}.attn_wo"])
         x = [a + b for a, b in zip(x, x_residual)]
+        intermediates[f"layer{li}_post_attn"] = list(x)
 
         x_residual = x
         x = rmsnorm(x)
@@ -90,6 +91,7 @@ def generate_step(token_id, pos_id, keys, values, weights, meta):
         intermediates[f"layer{li}_mlp_relu"] = mlp_relu
         x = linear(mlp_relu, weights[f"layer{li}.mlp_fc2"])
         x = [a + b for a, b in zip(x, x_residual)]
+        intermediates[f"layer{li}_final_emb"] = list(x)
 
     logits = linear(x, weights["lm_head"])
     intermediates["logits"] = logits

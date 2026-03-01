@@ -14,7 +14,7 @@
 
     <div class="controls">
         <button id="btn-generate">Generate a Name</button>
-        <button id="btn-step" disabled>Step Through</button>
+        <button id="btn-step">Step Through</button>
         <button id="btn-next" disabled>Next Character</button>
         <div class="slider-group">
             <label for="temperature">Temperature: <span id="temp-val">0.5</span></label>
@@ -72,10 +72,32 @@
             </div>
         </div>
 
-        <!-- Card 4: Prediction -->
+        <!-- Card 4: Combining -->
+        <div class="card" id="card-combine">
+            <div class="card-header teal">
+                <h2>4. Combining</h2>
+                <p>Head outputs are merged, then an MLP refines the representation into a final embedding</p>
+            </div>
+            <div class="card-body">
+                <div class="embed-row">
+                    <span class="embed-label">After attention</span>
+                    <div id="combine-post-attn" class="embed-cells"></div>
+                </div>
+                <div class="combine-mlp-section">
+                    <span class="embed-label mlp-label">MLP neurons (64)</span>
+                    <div id="combine-mlp" class="mlp-grid"></div>
+                </div>
+                <div class="embed-row">
+                    <span class="embed-label">Final embedding</span>
+                    <div id="combine-final" class="embed-cells"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 5: Prediction -->
         <div class="card" id="card-pred">
             <div class="card-header orange">
-                <h2>4. Prediction</h2>
+                <h2>5. Prediction</h2>
                 <p>The model assigns a probability to every possible next character</p>
             </div>
             <div class="card-body">

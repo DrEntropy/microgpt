@@ -4,6 +4,7 @@
     --green: #22c55e;
     --blue: #3b82f6;
     --purple: #8b5cf6;
+    --teal: #14b8a6;
     --orange: #f59e0b;
     --gold: #eab308;
     --bg: #f8fafc;
@@ -116,6 +117,7 @@ button:disabled { opacity: 0.4; cursor: default; }
 .card-header.green { border-left: 4px solid var(--green); }
 .card-header.blue { border-left: 4px solid var(--blue); }
 .card-header.purple { border-left: 4px solid var(--purple); }
+.card-header.teal { border-left: 4px solid var(--teal); }
 .card-header.orange { border-left: 4px solid var(--orange); }
 
 .card-body {
@@ -126,10 +128,12 @@ button:disabled { opacity: 0.4; cursor: default; }
 .card:has(.card-header.green) { border-left-color: var(--green); }
 .card:has(.card-header.blue) { border-left-color: var(--blue); }
 .card:has(.card-header.purple) { border-left-color: var(--purple); }
+.card:has(.card-header.teal) { border-left-color: var(--teal); }
 .card:has(.card-header.orange) { border-left-color: var(--orange); }
 .card-header.green,
 .card-header.blue,
 .card-header.purple,
+.card-header.teal,
 .card-header.orange { border-left: none; }
 
 /* Tokenization */
@@ -203,6 +207,45 @@ button:disabled { opacity: 0.4; cursor: default; }
     pointer-events: none;
 }
 .embed-cell:hover .tooltip { display: block; }
+
+/* Combining / MLP */
+.combine-mlp-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 12px 0;
+}
+.combine-mlp-section .mlp-label {
+    padding-top: 4px;
+}
+.mlp-grid {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: 2px;
+    flex-grow: 1;
+}
+.mlp-cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+    position: relative;
+    cursor: default;
+}
+.mlp-cell .tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+}
+.mlp-cell:hover .tooltip { display: block; }
 
 /* Attention */
 .attn-heads {
