@@ -470,6 +470,175 @@ btnGenerate.addEventListener("click", doGenerate);
 btnStep.addEventListener("click", startStepMode);
 btnNext.addEventListener("click", doNextStep);
 
+// --- Tab switching ---
+
+let weightsData = null;
+let weightsLoaded = false;
+
+$$(".tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        $$(".tab-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const target = btn.dataset.tab;
+        $$(".tab-panel").forEach((p) => {
+            p.style.display = p.id === target ? "" : "none";
+        });
+        if (target === "tab-weights" && !weightsLoaded) {
+            loadWeights();
+        }
+    });
+});
+
+// --- Weights tab ---
+
+const WEIGHT_DEFS = [
+    { key: "wte", title: "Token Embeddings (wte)", desc: "Each row is the learned 16-dim vector for one character", color: "blue", rowLabels: true },
+    { key: "wpe", title: "Position Embeddings (wpe)", desc: "Each row encodes one of the 16 possible positions", color: "blue", rowLabels: "pos" },
+    { key: "layer0.attn_wq", title: "Query Projection (Wq)", desc: "Projects input into query vectors for all 4 heads", color: "purple" },
+    { key: "layer0.attn_wk", title: "Key Projection (Wk)", desc: "Projects input into key vectors for all 4 heads", color: "purple" },
+    { key: "layer0.attn_wv", title: "Value Projection (Wv)", desc: "Projects input into value vectors for all 4 heads", color: "purple" },
+    { key: "layer0.attn_wo", title: "Output Projection (Wo)", desc: "Merges head outputs back into embedding space", color: "purple" },
+    { key: "layer0.mlp_fc1", title: "MLP Up (fc1)", desc: "Expands 16-dim embedding to 64-dim hidden layer", color: "teal" },
+    { key: "layer0.mlp_fc2", title: "MLP Down (fc2)", desc: "Projects 64-dim hidden back to 16-dim embedding", color: "teal" },
+    { key: "lm_head", title: "Language Model Head (lm_head)", desc: "Maps final embedding to 27 logits (one per character)", color: "rose", rowLabels: true },
+];
+
+async function loadWeights() {
+    const resp = await fetch("/api/weights");
+    weightsData = await resp.json();
+    weightsLoaded = true;
+    $("#weights-loading").style.display = "none";
+    renderAllWeights();
+}
+
+function renderAllWeights() {
+    const container = $("#weights-cards");
+    container.innerHTML = "";
+
+    WEIGHT_DEFS.forEach((def) => {
+        const matrix = weightsData[def.key];
+        if (!matrix) return;
+
+        const rows = matrix.length;
+        const cols = matrix[0].length;
+
+        // Card structure matching existing pattern
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const header = document.createElement("div");
+        header.className = "card-header " + def.color;
+        header.innerHTML = `<h2>${def.title}</h2><p>${def.desc}</p>`;
+        card.appendChild(header);
+
+        const body = document.createElement("div");
+        body.className = "card-body";
+
+        const shape = document.createElement("div");
+        shape.className = "weight-shape";
+        shape.textContent = `Shape: ${rows} \u00D7 ${cols}`;
+        body.appendChild(shape);
+
+        const wrap = document.createElement("div");
+        wrap.className = "weight-canvas-wrap";
+
+        // Row labels for wte, lm_head, wpe
+        if (def.rowLabels) {
+            const labelsDiv = document.createElement("div");
+            labelsDiv.className = "weight-row-labels";
+            for (let r = 0; r < rows; r++) {
+                const span = document.createElement("span");
+                if (def.rowLabels === "pos") {
+                    span.textContent = r;
+                } else {
+                    span.textContent = r === META.BOS ? "\u25B6" : META.uchars[r];
+                }
+                labelsDiv.appendChild(span);
+            }
+            wrap.appendChild(labelsDiv);
+        }
+
+        const inner = document.createElement("div");
+        inner.className = "weight-canvas-inner";
+
+        const canvas = document.createElement("canvas");
+        canvas.width = cols;
+        canvas.height = rows;
+        inner.appendChild(canvas);
+        wrap.appendChild(inner);
+
+        // Tooltip
+        const tooltip = document.createElement("div");
+        tooltip.className = "weight-tooltip";
+        wrap.appendChild(tooltip);
+
+        body.appendChild(wrap);
+        card.appendChild(body);
+        container.appendChild(card);
+
+        drawWeightCanvas(canvas, matrix, rows, cols);
+
+        // Mouse tooltip
+        canvas.addEventListener("mousemove", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const col = Math.floor((x / rect.width) * cols);
+            const row = Math.floor((y / rect.height) * rows);
+            if (row >= 0 && row < rows && col >= 0 && col < cols) {
+                const val = matrix[row][col];
+                let rowLabel = `row ${row}`;
+                if (def.rowLabels === "pos") {
+                    rowLabel = `pos ${row}`;
+                } else if (def.rowLabels === true) {
+                    rowLabel = row === META.BOS ? "[BOS]" : META.uchars[row];
+                }
+                tooltip.textContent = `[${rowLabel}, col ${col}] = ${val.toFixed(4)}`;
+                tooltip.style.display = "block";
+                tooltip.style.left = (x + 12) + "px";
+                tooltip.style.top = (y - 24) + "px";
+            }
+        });
+        canvas.addEventListener("mouseleave", () => {
+            tooltip.style.display = "none";
+        });
+    });
+}
+
+function drawWeightCanvas(canvas, matrix, rows, cols) {
+    const ctx = canvas.getContext("2d");
+    const img = ctx.createImageData(cols, rows);
+
+    // Find max absolute value for this matrix
+    let maxAbs = 0;
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const a = Math.abs(matrix[r][c]);
+            if (a > maxAbs) maxAbs = a;
+        }
+    }
+    if (maxAbs === 0) maxAbs = 1;
+
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const v = matrix[r][c];
+            const t = Math.max(-1, Math.min(1, v / maxAbs));
+            const idx = (r * cols + c) * 4;
+            if (t >= 0) {
+                img.data[idx] = 255;
+                img.data[idx + 1] = Math.round(255 * (1 - t));
+                img.data[idx + 2] = Math.round(255 * (1 - t));
+            } else {
+                img.data[idx] = Math.round(255 * (1 + t));
+                img.data[idx + 1] = Math.round(255 * (1 + t));
+                img.data[idx + 2] = 255;
+            }
+            img.data[idx + 3] = 255;
+        }
+    }
+    ctx.putImageData(img, 0, 0);
+}
+
 // --- Init ---
 
 buildTokenStrip();

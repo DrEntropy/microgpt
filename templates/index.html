@@ -12,6 +12,12 @@
         <p class="subtitle">See inside a tiny transformer as it generates names, character by character</p>
     </header>
 
+    <nav class="tab-bar">
+        <button class="tab-btn active" data-tab="tab-generation">Generation</button>
+        <button class="tab-btn" data-tab="tab-weights">Model Weights</button>
+    </nav>
+
+    <div id="tab-generation" class="tab-panel">
     <div class="controls">
         <button id="btn-generate">Generate a Name</button>
         <button id="btn-step">Step Through</button>
@@ -129,6 +135,12 @@
                 <div id="pred-bars" class="pred-bars"></div>
             </div>
         </div>
+    </div>
+    </div><!-- end tab-generation -->
+
+    <div id="tab-weights" class="tab-panel" style="display:none">
+        <div id="weights-loading" class="weights-loading">Loading weights...</div>
+        <div id="weights-cards"></div>
     </div>
 
     <script>

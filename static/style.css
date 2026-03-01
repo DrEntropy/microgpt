@@ -435,6 +435,109 @@ button:disabled { opacity: 0.4; cursor: default; }
     flex-shrink: 0;
 }
 
+/* Tab bar */
+.tab-bar {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 24px;
+    border-bottom: 2px solid var(--border);
+}
+.tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    padding: 10px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn:hover:not(.active) { color: var(--text); }
+.tab-btn.active {
+    color: var(--blue);
+    border-bottom-color: var(--blue);
+}
+
+/* Weights tab */
+.weights-loading {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 40px 0;
+    font-size: 0.95rem;
+}
+.weight-canvas-wrap {
+    position: relative;
+    display: flex;
+    gap: 0;
+}
+.weight-row-labels {
+    display: flex;
+    flex-direction: column;
+    padding-right: 4px;
+    flex-shrink: 0;
+}
+.weight-row-labels span {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    line-height: 1;
+    min-width: 24px;
+}
+.weight-canvas-inner {
+    flex: 1;
+    min-width: 0;
+}
+.weight-canvas-inner canvas {
+    width: 100%;
+    display: block;
+    image-rendering: pixelated;
+    cursor: crosshair;
+    border-radius: 4px;
+}
+.weight-axis-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+}
+.weight-axis-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+.weight-axis-label-row {
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
+    position: absolute;
+    left: -18px;
+    top: 50%;
+    transform: rotate(180deg) translateX(50%);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+.weight-tooltip {
+    display: none;
+    position: absolute;
+    background: var(--text);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 20;
+    pointer-events: none;
+}
+.weight-shape {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
     .attn-heads { grid-template-columns: repeat(2, 1fr); }

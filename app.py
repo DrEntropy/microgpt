@@ -72,5 +72,10 @@ def api_step():
     )
 
 
+@app.route("/api/weights")
+def api_weights():
+    return jsonify(weights)
+
+
 if __name__ == "__main__":
     app.run(port=5001, debug=True)

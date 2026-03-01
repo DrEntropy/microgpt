@@ -6,7 +6,11 @@ Built on top of Andrej Karpathy's [microgpt](https://gist.github.com/karpathy/86
 
 ## What it shows
 
-The UI visualizes each step of name generation through 6 pipeline cards:
+The UI has two tabs:
+
+### Generation
+
+Visualizes each step of name generation through 6 pipeline cards:
 
 1. **Tokenization** — how characters map to token IDs (27 tokens: a-z + \[START\])
 2. **Embedding** — token and position embeddings combined into a 16-number vector
@@ -14,6 +18,10 @@ The UI visualizes each step of name generation through 6 pipeline cards:
 4. **Combining** — per-head outputs (4 groups of 4), blended via `wo`, then refined through an MLP (64 neurons) into a final 16-dim embedding
 5. **Projection** — the final embedding is projected through `lm_head` into 27 raw logits (one per character), with the top 5 labeled
 6. **Prediction** — probability bar chart over all possible next characters (softmax of logits)
+
+### Model Weights
+
+Displays all 9 weight matrices (~4,192 parameters) as interactive colored heatmaps. Hover over any cell to see its exact value. Matrices are shown in forward-pass order — token/position embeddings, Q/K/V/O attention projections, MLP up/down layers, and the final language model head. Card colors match the corresponding Generation tab stages.
 
 ## Setup
 
