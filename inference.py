@@ -80,6 +80,7 @@ def generate_step(token_id, pos_id, keys, values, weights, meta):
             ]
             x_attn.extend(head_out)
 
+        intermediates[f"layer{li}_head_outputs"] = list(x_attn)
         x = linear(x_attn, weights[f"layer{li}.attn_wo"])
         x = [a + b for a, b in zip(x, x_residual)]
         intermediates[f"layer{li}_post_attn"] = list(x)

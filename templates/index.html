@@ -80,7 +80,11 @@
             </div>
             <div class="card-body">
                 <div class="embed-row">
-                    <span class="embed-label">After attention</span>
+                    <span class="embed-label">Head outputs</span>
+                    <div id="combine-heads" class="embed-cells head-grouped"></div>
+                </div>
+                <div class="embed-row">
+                    <span class="embed-label">After blending</span>
                     <div id="combine-post-attn" class="embed-cells"></div>
                 </div>
                 <div class="combine-mlp-section">
@@ -94,10 +98,31 @@
             </div>
         </div>
 
-        <!-- Card 5: Prediction -->
+        <!-- Card 5: Projection -->
+        <div class="card" id="card-proj">
+            <div class="card-header rose">
+                <h2>5. Projection</h2>
+                <p>The final embedding is projected into 27 logits — one raw score per possible character</p>
+            </div>
+            <div class="card-body">
+                <div class="projection-flow">
+                    <div class="proj-section">
+                        <span class="proj-label">Final embedding (16)</span>
+                        <div id="proj-embed" class="embed-cells embed-cells-compact"></div>
+                    </div>
+                    <div class="proj-arrow">→ lm_head (16 → 27) →</div>
+                    <div class="proj-section">
+                        <span class="proj-label">Raw logits (27)</span>
+                        <div id="proj-logits" class="logit-cells"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 6: Prediction -->
         <div class="card" id="card-pred">
             <div class="card-header orange">
-                <h2>5. Prediction</h2>
+                <h2>6. Prediction</h2>
                 <p>The model assigns a probability to every possible next character</p>
             </div>
             <div class="card-body">

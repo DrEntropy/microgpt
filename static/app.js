@@ -122,7 +122,67 @@ function renderMlpGrid(values) {
     });
 }
 
+function renderHeadOutputs(inter) {
+    const container = $("#combine-heads");
+    container.innerHTML = "";
+    const values = inter.layer0_head_outputs;
+    const maxAbs = Math.max(...values.map(Math.abs), 0.001);
+    values.forEach((v) => {
+        const cell = document.createElement("div");
+        cell.className = "embed-cell";
+        cell.style.backgroundColor = valueColor(v, maxAbs);
+        const tip = document.createElement("span");
+        tip.className = "tooltip";
+        tip.textContent = v.toFixed(4);
+        cell.appendChild(tip);
+        container.appendChild(cell);
+    });
+}
+
+function renderProjection(inter) {
+    // Compact final embedding
+    renderEmbedding("#proj-embed", inter.layer0_final_emb);
+
+    // Logit cells
+    const container = $("#proj-logits");
+    container.innerHTML = "";
+    const logits = inter.logits;
+    const maxAbs = Math.max(...logits.map(Math.abs), 0.001);
+
+    // Find top 5 indices
+    const indexed = logits.map((v, i) => ({ v, i }));
+    indexed.sort((a, b) => b.v - a.v);
+    const top5 = new Set(indexed.slice(0, 5).map((x) => x.i));
+
+    logits.forEach((v, i) => {
+        const wrapper = document.createElement("div");
+        wrapper.style.display = "flex";
+        wrapper.style.flexDirection = "column";
+        wrapper.style.alignItems = "center";
+
+        const cell = document.createElement("div");
+        cell.className = "logit-cell";
+        cell.style.backgroundColor = valueColor(v, maxAbs);
+        const charLabel = i === META.BOS ? "[END]" : META.uchars[i];
+        const tip = document.createElement("span");
+        tip.className = "tooltip";
+        tip.textContent = `${charLabel}: ${v.toFixed(2)}`;
+        cell.appendChild(tip);
+        wrapper.appendChild(cell);
+
+        if (top5.has(i)) {
+            const lbl = document.createElement("div");
+            lbl.className = "logit-label";
+            lbl.textContent = charLabel;
+            wrapper.appendChild(lbl);
+        }
+
+        container.appendChild(wrapper);
+    });
+}
+
 function renderCombining(inter) {
+    renderHeadOutputs(inter);
     renderEmbedding("#combine-post-attn", inter.layer0_post_attn);
     renderMlpGrid(inter.layer0_mlp_relu);
     renderEmbedding("#combine-final", inter.layer0_final_emb);
@@ -253,6 +313,9 @@ function showStep(idx) {
 
     // Combining
     renderCombining(inter);
+
+    // Projection
+    renderProjection(inter);
 
     // Prediction
     const temp = getTemp();
