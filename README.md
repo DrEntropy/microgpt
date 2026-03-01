@@ -6,13 +6,14 @@ Built on top of Andrej Karpathy's [microgpt](https://gist.github.com/karpathy/86
 
 ## What it shows
 
-The UI visualizes each step of name generation through 5 pipeline cards:
+The UI visualizes each step of name generation through 6 pipeline cards:
 
 1. **Tokenization** — how characters map to token IDs (27 tokens: a-z + \[START\])
 2. **Embedding** — token and position embeddings combined into a 16-number vector
 3. **Attention** — heatmaps for each of the 4 attention heads showing which earlier characters the model focuses on
-4. **Combining** — how head outputs merge, pass through an MLP (64 neurons), and produce a final embedding
-5. **Prediction** — probability bar chart over all possible next characters
+4. **Combining** — per-head outputs (4 groups of 4), blended via `wo`, then refined through an MLP (64 neurons) into a final 16-dim embedding
+5. **Projection** — the final embedding is projected through `lm_head` into 27 raw logits (one per character), with the top 5 labeled
+6. **Prediction** — probability bar chart over all possible next characters (softmax of logits)
 
 ## Setup
 
