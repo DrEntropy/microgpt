@@ -350,10 +350,47 @@ button:disabled { opacity: 0.4; cursor: default; }
     color: var(--text-muted);
     margin-bottom: 4px;
 }
+.attn-grid-wrap {
+    display: flex;
+    gap: 0;
+}
+.attn-row-labels {
+    display: flex;
+    flex-direction: column;
+    padding-right: 3px;
+}
+.attn-row-labels span {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1;
+    min-width: 10px;
+}
+.attn-col-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
 .attn-head canvas {
     width: 100%;
     border-radius: 4px;
     image-rendering: pixelated;
+    display: block;
+}
+.attn-col-labels {
+    display: flex;
+    padding-top: 3px;
+}
+.attn-col-labels span {
+    flex: 1;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1;
 }
 
 /* Prediction bars */

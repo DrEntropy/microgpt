@@ -198,12 +198,26 @@ function initAttnHeads() {
         div.className = "attn-head";
         const label = document.createElement("label");
         label.textContent = `Head ${h + 1}`;
+        const gridWrap = document.createElement("div");
+        gridWrap.className = "attn-grid-wrap";
+        const rowLabels = document.createElement("div");
+        rowLabels.className = "attn-row-labels";
+        rowLabels.id = `attn-row-labels-${h}`;
+        const colWrap = document.createElement("div");
+        colWrap.className = "attn-col-wrap";
         const canvas = document.createElement("canvas");
         canvas.id = `attn-canvas-${h}`;
         canvas.width = META.block_size;
         canvas.height = META.block_size;
+        const colLabels = document.createElement("div");
+        colLabels.className = "attn-col-labels";
+        colLabels.id = `attn-col-labels-${h}`;
+        colWrap.appendChild(canvas);
+        colWrap.appendChild(colLabels);
+        gridWrap.appendChild(rowLabels);
+        gridWrap.appendChild(colWrap);
         div.appendChild(label);
-        div.appendChild(canvas);
+        div.appendChild(gridWrap);
         container.appendChild(div);
     }
 }
@@ -211,6 +225,13 @@ function initAttnHeads() {
 // Accumulate attention weights across all steps
 function renderAttention(steps, upToIdx) {
     const size = upToIdx + 1; // number of steps to show
+    // Collect token labels for each position
+    const chars = [];
+    for (let i = 0; i <= upToIdx; i++) {
+        const ch = steps[i].input_char;
+        chars.push(ch === "[START]" ? "\u25B6" : ch);
+    }
+
     for (let h = 0; h < META.n_head; h++) {
         const canvas = $(`#attn-canvas-${h}`);
         canvas.width = Math.max(size, 1);
@@ -231,6 +252,24 @@ function renderAttention(steps, upToIdx) {
             }
         }
         ctx.putImageData(img, 0, 0);
+
+        // Row labels (left side)
+        const rowLabels = $(`#attn-row-labels-${h}`);
+        rowLabels.innerHTML = "";
+        chars.forEach((ch) => {
+            const span = document.createElement("span");
+            span.textContent = ch;
+            rowLabels.appendChild(span);
+        });
+
+        // Column labels (bottom)
+        const colLabels = $(`#attn-col-labels-${h}`);
+        colLabels.innerHTML = "";
+        chars.forEach((ch) => {
+            const span = document.createElement("span");
+            span.textContent = ch;
+            colLabels.appendChild(span);
+        });
     }
 }
 
