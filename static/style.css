@@ -29,6 +29,9 @@ body {
 header { text-align: center; margin-bottom: 24px; }
 header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; }
 .subtitle { color: var(--text-muted); font-size: 1rem; margin-top: 4px; }
+.attribution { color: var(--text-muted); font-size: 0.85rem; margin-top: 2px; }
+.attribution a { color: var(--text-muted); text-decoration: underline; }
+.attribution a:hover { color: var(--text); }
 
 /* Controls */
 .controls {

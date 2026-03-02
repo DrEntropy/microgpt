@@ -12,9 +12,12 @@ An educational web UI that visualizes a tiny transformer (character-level GPT) g
 uv sync                        # install dependencies
 uv run python save_weights.py  # train model → weights.json (~1 min)
 uv run python app.py           # start Flask server on localhost:5001
+docker build -t microgpt .     # build Docker image (optional)
+docker run -p 5001:5001 microgpt  # run with gunicorn (optional)
+fly deploy                     # deploy to Fly.io (optional)
 ```
 
-No tests, linting, or CI are configured.
+No tests or linting are configured. CI/CD is via GitHub Actions — pushes to `main` auto-deploy to Fly.io (see `.github/workflows/fly-deploy.yml`).
 
 ## Architecture
 

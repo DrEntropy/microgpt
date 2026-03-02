@@ -49,6 +49,18 @@ docker run -p 5001:5001 microgpt
 
 This uses gunicorn as a production server and doesn't require Python or uv on the host machine. Useful for deploying to a server.
 
+### Deploying to Fly.io
+
+The repo includes a `fly.toml` config and a GitHub Actions workflow (`.github/workflows/fly-deploy.yml`) that auto-deploys on every push to `main`.
+
+To set up your own deployment:
+
+1. Install the [Fly CLI](https://fly.io/docs/flyctl/install/) and sign up
+2. Run `fly launch` (creates the app and sets the `FLY_API_TOKEN` GitHub secret)
+3. Push to `main` — GitHub Actions handles the rest
+
+To deploy manually: `fly deploy`
+
 ## Usage
 
 - **Generate a Name** — generates a full name, animating one character at a time. Click any character to inspect that step's internals.
