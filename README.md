@@ -40,6 +40,15 @@ uv run python app.py
 
 Then visit [http://localhost:5001](http://localhost:5001).
 
+### Docker (optional)
+
+```bash
+docker build -t microgpt .
+docker run -p 5001:5001 microgpt
+```
+
+This uses gunicorn as a production server and doesn't require Python or uv on the host machine. Useful for deploying to a server.
+
 ## Usage
 
 - **Generate a Name** — generates a full name, animating one character at a time. Click any character to inspect that step's internals.
