@@ -406,12 +406,20 @@ function renderName(steps) {
 
 // --- Generate mode ---
 
+function showError(message) {
+    const span = document.createElement("span");
+    span.className = "placeholder";
+    span.textContent = message;
+    nameDisplay.replaceChildren(span);
+}
+
 async function doGenerate() {
     if (!validateStarterText()) return;
 
     btnGenerate.disabled = true;
     btnStep.disabled = true;
     btnNext.disabled = true;
+    starterInput.disabled = true;
     stepMode = false;
     allSteps = [];
     activeStepIdx = -1;
@@ -432,9 +440,10 @@ async function doGenerate() {
         }
         allSteps = data.steps;
     } catch (err) {
-        nameDisplay.innerHTML = `<span class="placeholder">${err.message}</span>`;
+        showError(err.message);
         btnGenerate.disabled = false;
         btnStep.disabled = false;
+        starterInput.disabled = false;
         return;
     }
 
@@ -453,6 +462,7 @@ async function doGenerate() {
 
     btnGenerate.disabled = false;
     btnStep.disabled = false;
+    starterInput.disabled = false;
 }
 
 // --- Step-through mode ---
@@ -468,6 +478,7 @@ async function startStepMode() {
     btnGenerate.disabled = true;
     btnStep.disabled = true;
     btnNext.disabled = true;
+    starterInput.disabled = true;
     initAttnHeads();
 
     try {
@@ -500,13 +511,15 @@ async function startStepMode() {
             btnGenerate.disabled = false;
             btnStep.disabled = false;
             btnNext.disabled = true;
+            starterInput.disabled = false;
             stepMode = false;
         }
     } catch (err) {
-        nameDisplay.innerHTML = `<span class="placeholder">${err.message}</span>`;
+        showError(err.message);
         btnGenerate.disabled = false;
         btnStep.disabled = false;
         btnNext.disabled = true;
+        starterInput.disabled = false;
         stepMode = false;
     }
 }
@@ -527,10 +540,11 @@ async function doNextStep() {
         }
         step = data;
     } catch (err) {
-        nameDisplay.innerHTML = `<span class="placeholder">${err.message}</span>`;
+        showError(err.message);
         btnGenerate.disabled = false;
         btnStep.disabled = false;
         btnNext.disabled = true;
+        starterInput.disabled = false;
         stepMode = false;
         return;
     }
@@ -545,6 +559,7 @@ async function doNextStep() {
         btnGenerate.disabled = false;
         btnStep.disabled = false;
         btnNext.disabled = true;
+        starterInput.disabled = false;
         stepMode = false;
     } else {
         stepTokenIds.push(step.output_token_id);
@@ -552,6 +567,7 @@ async function doNextStep() {
             btnGenerate.disabled = false;
             btnStep.disabled = false;
             btnNext.disabled = true;
+            starterInput.disabled = false;
             stepMode = false;
         } else {
             btnNext.disabled = false;

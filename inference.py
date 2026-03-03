@@ -136,14 +136,10 @@ def sample_token(logits, temperature, meta):
 
 
 def prefill_steps(weights, meta, starter_tokens, temperature=0.5):
-    """Run forced prefix tokens after BOS and return (steps, token_ids)."""
+    """Run forced prefix tokens after BOS and return (steps, token_ids, keys, values)."""
     n_layer = meta["n_layer"]
     BOS = meta["BOS"]
     uchars = meta["uchars"]
-    block_size = meta["block_size"]
-
-    if len(starter_tokens) > block_size - 1:
-        raise ValueError(f"starter_text too long (max {block_size - 1} characters)")
 
     keys = [[] for _ in range(n_layer)]
     values = [[] for _ in range(n_layer)]
@@ -176,7 +172,7 @@ def prefill_steps(weights, meta, starter_tokens, temperature=0.5):
         token_ids.append(forced_token)
         token_id = forced_token
 
-    return steps, token_ids
+    return steps, token_ids, keys, values
 
 
 def generate_name(weights, meta, temperature=0.5, seed=None, starter_tokens=None):
@@ -184,31 +180,21 @@ def generate_name(weights, meta, temperature=0.5, seed=None, starter_tokens=None
     if seed is not None:
         random.seed(seed)
 
-    n_layer = meta["n_layer"]
     block_size = meta["block_size"]
     BOS = meta["BOS"]
     uchars = meta["uchars"]
     starter_tokens = starter_tokens or []
 
-    if len(starter_tokens) > block_size - 1:
-        raise ValueError(f"starter_text too long (max {block_size - 1} characters)")
+    steps, token_ids, keys, values = prefill_steps(
+        weights, meta, starter_tokens, temperature=temperature
+    )
+    token_id = token_ids[-1]
 
-    keys = [[] for _ in range(n_layer)]
-    values = [[] for _ in range(n_layer)]
-    token_id = BOS
-    steps = []
-
-    for pos_id in range(block_size):
+    for pos_id in range(len(starter_tokens), block_size):
         logits, intermediates = generate_step(
             token_id, pos_id, keys, values, weights, meta
         )
-        if pos_id < len(starter_tokens):
-            next_token = starter_tokens[pos_id]
-            probs = softmax([l / temperature for l in logits])
-            forced = True
-        else:
-            next_token, probs = sample_token(logits, temperature, meta)
-            forced = False
+        next_token, probs = sample_token(logits, temperature, meta)
 
         input_char = "[START]" if token_id == BOS else uchars[token_id]
         output_char = "[END]" if next_token == BOS else uchars[next_token]
@@ -222,7 +208,7 @@ def generate_name(weights, meta, temperature=0.5, seed=None, starter_tokens=None
                 "output_char": output_char,
                 "probs": probs,
                 "intermediates": intermediates,
-                "forced": forced,
+                "forced": False,
             }
         )
 

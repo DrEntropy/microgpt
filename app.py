@@ -65,14 +65,12 @@ def validate_token_ids(token_ids, meta):
         raise ValueError("token_ids must start with BOS token")
 
     vocab_size = meta["vocab_size"]
-    normalized = []
     for tid in token_ids:
         if not isinstance(tid, int):
             raise ValueError("token_ids must contain integers")
         if tid < 0 or tid >= vocab_size:
             raise ValueError(f"token_ids entries must be in [0, {vocab_size - 1}]")
-        normalized.append(tid)
-    return normalized
+    return token_ids
 
 
 @app.route("/api/step/init", methods=["POST"])
@@ -89,7 +87,7 @@ def api_step_init():
         starter_text, starter_tokens = tokenize_starter_text(
             data.get("starter_text", ""), meta
         )
-        steps, token_ids = prefill_steps(
+        steps, token_ids, _, _ = prefill_steps(
             weights, meta, starter_tokens, temperature=temperature
         )
     except ValueError as exc:
