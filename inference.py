@@ -11,6 +11,32 @@ def load_model(path="weights.json"):
     return data["weights"], data["metadata"]
 
 
+def tokenize_starter_text(starter_text, meta):
+    """Normalize and tokenize optional starter text, validating model constraints."""
+    if starter_text is None:
+        return "", []
+    if not isinstance(starter_text, str):
+        raise ValueError("starter_text must be a string")
+
+    normalized = starter_text.strip().lower()
+    if not normalized:
+        return "", []
+
+    uchars = meta["uchars"]
+    block_size = meta["block_size"]
+    max_len = block_size - 1  # leave room for leading BOS at position 0
+    if len(normalized) > max_len:
+        raise ValueError(f"starter_text too long (max {max_len} characters)")
+
+    char_to_id = {ch: i for i, ch in enumerate(uchars)}
+    invalid = sorted({ch for ch in normalized if ch not in char_to_id})
+    if invalid:
+        pretty = ", ".join(repr(ch) for ch in invalid)
+        raise ValueError(f"starter_text contains unsupported characters: {pretty}")
+
+    return normalized, [char_to_id[ch] for ch in normalized]
+
+
 def linear(x, w):
     return [sum(wi * xi for wi, xi in zip(wo, x)) for wo in w]
 
@@ -109,22 +135,62 @@ def sample_token(logits, temperature, meta):
     return token_id, probs
 
 
-def generate_name(weights, meta, temperature=0.5, seed=None):
-    """Generate one name, returning list of step dicts."""
-    if seed is not None:
-        random.seed(seed)
-
+def prefill_steps(weights, meta, starter_tokens, temperature=0.5):
+    """Run forced prefix tokens after BOS and return (steps, token_ids, keys, values)."""
     n_layer = meta["n_layer"]
-    block_size = meta["block_size"]
     BOS = meta["BOS"]
     uchars = meta["uchars"]
 
     keys = [[] for _ in range(n_layer)]
     values = [[] for _ in range(n_layer)]
     token_id = BOS
+    token_ids = [BOS]
     steps = []
 
-    for pos_id in range(block_size):
+    for pos_id, forced_token in enumerate(starter_tokens):
+        logits, intermediates = generate_step(
+            token_id, pos_id, keys, values, weights, meta
+        )
+        probs = softmax([l / temperature for l in logits])
+
+        input_char = "[START]" if token_id == BOS else uchars[token_id]
+        output_char = "[END]" if forced_token == BOS else uchars[forced_token]
+
+        steps.append(
+            {
+                "pos": pos_id,
+                "input_token_id": token_id,
+                "input_char": input_char,
+                "output_token_id": forced_token,
+                "output_char": output_char,
+                "probs": probs,
+                "intermediates": intermediates,
+                "forced": True,
+            }
+        )
+
+        token_ids.append(forced_token)
+        token_id = forced_token
+
+    return steps, token_ids, keys, values
+
+
+def generate_name(weights, meta, temperature=0.5, seed=None, starter_tokens=None):
+    """Generate one name, returning list of step dicts."""
+    if seed is not None:
+        random.seed(seed)
+
+    block_size = meta["block_size"]
+    BOS = meta["BOS"]
+    uchars = meta["uchars"]
+    starter_tokens = starter_tokens or []
+
+    steps, token_ids, keys, values = prefill_steps(
+        weights, meta, starter_tokens, temperature=temperature
+    )
+    token_id = token_ids[-1]
+
+    for pos_id in range(len(starter_tokens), block_size):
         logits, intermediates = generate_step(
             token_id, pos_id, keys, values, weights, meta
         )
@@ -142,6 +208,7 @@ def generate_name(weights, meta, temperature=0.5, seed=None):
                 "output_char": output_char,
                 "probs": probs,
                 "intermediates": intermediates,
+                "forced": False,
             }
         )
 

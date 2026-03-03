@@ -17,7 +17,7 @@ docker run -p 5001:5001 microgpt  # run with gunicorn (optional)
 fly deploy                     # deploy to Fly.io (optional)
 ```
 
-No tests or linting are configured. CI/CD is via GitHub Actions — pushes to `main` auto-deploy to Fly.io (see `.github/workflows/fly-deploy.yml`).
+Only minimal testing is implemented. CI/CD is via GitHub Actions — pushes to `main` auto-deploy to Fly.io (see `.github/workflows/fly-deploy.yml`).
 
 ## Architecture
 
