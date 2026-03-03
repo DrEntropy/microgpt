@@ -23,6 +23,11 @@
         <button id="btn-generate">Generate a Name</button>
         <button id="btn-step">Step Through</button>
         <button id="btn-next" disabled>Next Character</button>
+        <div class="starter-group">
+            <label for="starter-text">Starter text (optional)</label>
+            <input id="starter-text" type="text" placeholder="e.g. al" maxlength="15" autocomplete="off">
+            <div id="starter-error" class="starter-error"></div>
+        </div>
         <div class="slider-group">
             <label for="temperature">Temperature: <span id="temp-val">0.5</span></label>
             <input type="range" id="temperature" min="0.1" max="1.5" step="0.05" value="0.5">

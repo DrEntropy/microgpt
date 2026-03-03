@@ -4,7 +4,14 @@ import random
 
 from flask import Flask, jsonify, render_template, request
 
-from inference import generate_name, generate_step, load_model, sample_token
+from inference import (
+    generate_name,
+    generate_step,
+    load_model,
+    prefill_steps,
+    sample_token,
+    tokenize_starter_text,
+)
 
 app = Flask(__name__)
 weights, meta = load_model()
@@ -18,20 +25,101 @@ def index():
 @app.route("/api/generate", methods=["POST"])
 def api_generate():
     data = request.get_json(force=True, silent=True) or {}
-    temperature = float(data.get("temperature", 0.5))
+    try:
+        temperature = float(data.get("temperature", 0.5))
+    except (TypeError, ValueError):
+        return jsonify({"error": "temperature must be a number"}), 400
     temperature = max(0.01, min(2.0, temperature))
     seed = data.get("seed", random.randint(0, 2**31))
+    try:
+        starter_text, starter_tokens = tokenize_starter_text(
+            data.get("starter_text", ""), meta
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
-    name, steps = generate_name(weights, meta, temperature=temperature, seed=seed)
-    return jsonify({"name": name, "steps": steps, "seed": seed})
+    name, steps = generate_name(
+        weights,
+        meta,
+        temperature=temperature,
+        seed=seed,
+        starter_tokens=starter_tokens,
+    )
+    return jsonify(
+        {
+            "name": name,
+            "steps": steps,
+            "seed": seed,
+            "starter_text": starter_text,
+            "starter_tokens": starter_tokens,
+        }
+    )
+
+
+def validate_token_ids(token_ids, meta):
+    if not isinstance(token_ids, list) or not token_ids:
+        raise ValueError("token_ids must be a non-empty list")
+    if len(token_ids) > meta["block_size"]:
+        raise ValueError(f"token_ids too long (max {meta['block_size']})")
+    if token_ids[0] != meta["BOS"]:
+        raise ValueError("token_ids must start with BOS token")
+
+    vocab_size = meta["vocab_size"]
+    normalized = []
+    for tid in token_ids:
+        if not isinstance(tid, int):
+            raise ValueError("token_ids must contain integers")
+        if tid < 0 or tid >= vocab_size:
+            raise ValueError(f"token_ids entries must be in [0, {vocab_size - 1}]")
+        normalized.append(tid)
+    return normalized
+
+
+@app.route("/api/step/init", methods=["POST"])
+def api_step_init():
+    """Initialize step-through mode with optional forced starter text."""
+    data = request.get_json(force=True, silent=True) or {}
+    try:
+        temperature = float(data.get("temperature", 0.5))
+    except (TypeError, ValueError):
+        return jsonify({"error": "temperature must be a number"}), 400
+    temperature = max(0.01, min(2.0, temperature))
+
+    try:
+        starter_text, starter_tokens = tokenize_starter_text(
+            data.get("starter_text", ""), meta
+        )
+        steps, token_ids = prefill_steps(
+            weights, meta, starter_tokens, temperature=temperature
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    can_continue = len(token_ids) < meta["block_size"]
+    return jsonify(
+        {
+            "steps": steps,
+            "token_ids": token_ids,
+            "starter_text": starter_text,
+            "starter_tokens": starter_tokens,
+            "can_continue": can_continue,
+        }
+    )
 
 
 @app.route("/api/step", methods=["POST"])
 def api_step():
     """Stateless single-step: client sends token history, server replays and computes one step."""
-    data = request.get_json(force=True)
-    token_ids = data["token_ids"]  # list of token IDs so far (starting with BOS)
-    temperature = float(data.get("temperature", 0.5))
+    data = request.get_json(force=True, silent=True) or {}
+    try:
+        token_ids = validate_token_ids(data.get("token_ids"), meta)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    try:
+        temperature = float(data.get("temperature", 0.5))
+    except (TypeError, ValueError):
+        return jsonify({"error": "temperature must be a number"}), 400
     temperature = max(0.01, min(2.0, temperature))
 
     n_layer = meta["n_layer"]

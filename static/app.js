@@ -16,11 +16,40 @@ const btnNext = $("#btn-next");
 const tempSlider = $("#temperature");
 const tempVal = $("#temp-val");
 const nameDisplay = $("#name-display");
+const starterInput = $("#starter-text");
+const starterError = $("#starter-error");
 
 // --- Helpers ---
 
 function getTemp() {
     return parseFloat(tempSlider.value);
+}
+
+function getStarterText() {
+    return starterInput.value.trim().toLowerCase();
+}
+
+function setStarterError(message) {
+    starterError.textContent = message || "";
+}
+
+function validateStarterText() {
+    const value = getStarterText();
+    const maxLen = Math.max(0, META.block_size - 1);
+    if (value.length > maxLen) {
+        setStarterError(`Max ${maxLen} characters`);
+        return false;
+    }
+
+    const allowed = new Set(META.uchars);
+    const bad = [...new Set(value.split("").filter((ch) => !allowed.has(ch)))];
+    if (bad.length > 0) {
+        setStarterError(`Only ${META.uchars[0]}-${META.uchars[META.uchars.length - 1]} supported`);
+        return false;
+    }
+
+    setStarterError("");
+    return true;
 }
 
 function softmax(logits, temp) {
@@ -378,6 +407,8 @@ function renderName(steps) {
 // --- Generate mode ---
 
 async function doGenerate() {
+    if (!validateStarterText()) return;
+
     btnGenerate.disabled = true;
     btnStep.disabled = true;
     btnNext.disabled = true;
@@ -386,13 +417,26 @@ async function doGenerate() {
     activeStepIdx = -1;
     nameDisplay.innerHTML = '<span class="placeholder">Generating...</span>';
 
-    const resp = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ temperature: getTemp() }),
-    });
-    const data = await resp.json();
-    allSteps = data.steps;
+    try {
+        const resp = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                temperature: getTemp(),
+                starter_text: getStarterText(),
+            }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            throw new Error(data.error || "Failed to generate");
+        }
+        allSteps = data.steps;
+    } catch (err) {
+        nameDisplay.innerHTML = `<span class="placeholder">${err.message}</span>`;
+        btnGenerate.disabled = false;
+        btnStep.disabled = false;
+        return;
+    }
 
     // Animate characters appearing
     nameDisplay.innerHTML = "";
@@ -414,26 +458,82 @@ async function doGenerate() {
 // --- Step-through mode ---
 
 async function startStepMode() {
+    if (!validateStarterText()) return;
+
     stepMode = true;
     allSteps = [];
     activeStepIdx = -1;
-    stepTokenIds = [META.BOS];
-    nameDisplay.innerHTML = '<span class="placeholder">Click "Next Character" to generate one character at a time</span>';
+    stepTokenIds = [];
+    nameDisplay.innerHTML = '<span class="placeholder">Initializing...</span>';
     btnGenerate.disabled = true;
     btnStep.disabled = true;
-    btnNext.disabled = false;
+    btnNext.disabled = true;
     initAttnHeads();
+
+    try {
+        const resp = await fetch("/api/step/init", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                temperature: getTemp(),
+                starter_text: getStarterText(),
+            }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            throw new Error(data.error || "Failed to initialize step mode");
+        }
+
+        stepTokenIds = data.token_ids;
+        allSteps = data.steps;
+
+        if (allSteps.length > 0) {
+            renderName(allSteps);
+            showStep(allSteps.length - 1);
+        } else {
+            nameDisplay.innerHTML = '<span class="placeholder">Click "Next Character" to generate one character at a time</span>';
+        }
+
+        if (data.can_continue) {
+            btnNext.disabled = false;
+        } else {
+            btnGenerate.disabled = false;
+            btnStep.disabled = false;
+            btnNext.disabled = true;
+            stepMode = false;
+        }
+    } catch (err) {
+        nameDisplay.innerHTML = `<span class="placeholder">${err.message}</span>`;
+        btnGenerate.disabled = false;
+        btnStep.disabled = false;
+        btnNext.disabled = true;
+        stepMode = false;
+    }
 }
 
 async function doNextStep() {
     btnNext.disabled = true;
 
-    const resp = await fetch("/api/step", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token_ids: stepTokenIds, temperature: getTemp() }),
-    });
-    const step = await resp.json();
+    let step;
+    try {
+        const resp = await fetch("/api/step", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token_ids: stepTokenIds, temperature: getTemp() }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            throw new Error(data.error || "Failed to generate next character");
+        }
+        step = data;
+    } catch (err) {
+        nameDisplay.innerHTML = `<span class="placeholder">${err.message}</span>`;
+        btnGenerate.disabled = false;
+        btnStep.disabled = false;
+        btnNext.disabled = true;
+        stepMode = false;
+        return;
+    }
     allSteps.push(step);
 
     // Update name display
@@ -448,7 +548,14 @@ async function doNextStep() {
         stepMode = false;
     } else {
         stepTokenIds.push(step.output_token_id);
-        btnNext.disabled = false;
+        if (stepTokenIds.length >= META.block_size) {
+            btnGenerate.disabled = false;
+            btnStep.disabled = false;
+            btnNext.disabled = true;
+            stepMode = false;
+        } else {
+            btnNext.disabled = false;
+        }
     }
 }
 
@@ -469,6 +576,10 @@ tempSlider.addEventListener("input", () => {
 btnGenerate.addEventListener("click", doGenerate);
 btnStep.addEventListener("click", startStepMode);
 btnNext.addEventListener("click", doNextStep);
+starterInput.addEventListener("input", () => {
+    starterInput.value = starterInput.value.toLowerCase();
+    validateStarterText();
+});
 
 // --- Tab switching ---
 
@@ -643,3 +754,4 @@ function drawWeightCanvas(canvas, matrix, rows, cols) {
 
 buildTokenStrip();
 initAttnHeads();
+starterInput.maxLength = Math.max(0, META.block_size - 1);

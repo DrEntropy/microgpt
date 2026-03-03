@@ -71,6 +71,32 @@ button:disabled { opacity: 0.4; cursor: default; }
 .slider-group label { font-size: 0.8rem; color: var(--text-muted); }
 .slider-group input[type="range"] { width: 120px; }
 
+.starter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.starter-group label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+.starter-group input {
+    width: 150px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 9px;
+    font-size: 0.9rem;
+}
+.starter-group input:focus {
+    outline: 2px solid #bfdbfe;
+    border-color: var(--blue);
+}
+.starter-error {
+    min-height: 16px;
+    font-size: 0.75rem;
+    color: #dc2626;
+}
+
 /* Name display */
 .name-display {
     text-align: center;
