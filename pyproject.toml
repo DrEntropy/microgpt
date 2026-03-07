@@ -3,5 +3,6 @@ name = "microgpt"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.13"
 dependencies = ["flask>=3.0", "gunicorn>=23.0"]
