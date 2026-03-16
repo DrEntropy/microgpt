@@ -51,7 +51,7 @@ This uses gunicorn as a production server and doesn't require Python or uv on th
 
 ### Deploying to Fly.io
 
-The repo includes a `fly.toml` config and a GitHub Actions workflow (`.github/workflows/fly-deploy.yml`) that auto-deploys on every push to `main`.
+The repo includes a `fly.toml` config. CI/CD auto-deploy is not currently enabled, but can be set up with a GitHub Actions workflow:
 
 To set up your own deployment:
 
