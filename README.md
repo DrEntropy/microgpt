@@ -61,6 +61,8 @@ To set up your own deployment:
 
 To deploy manually: `fly deploy`
 
+As of March 2026, running on Fly.io cost about $0.20/day with `min_machines_running = 1` in `fly.toml`. This keeps one machine always warm for snappy responses — with 0, cold starts made it noticeably sluggish.
+
 ## Usage
 
 - **Generate a Name** — generates a full name, animating one character at a time. Click any character to inspect that step's internals.
